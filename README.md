@@ -1,4 +1,5 @@
 # Setup of development environment
+Prerequisite is a setup as we always had it during the labs with mininet virtual machine. Clone this repo locally and run the following commands in order to setup the correct environment. The restapi is exposed via port 8080, if you do it with visual studio code remote development this port will automatically get forwarded to your local machine as well.
 ## 1. Run Development Infrastructure
 ```bash
 sudo mn --topo=linear,3 --controller=remote,ip=127.0.0.1,port=6633 --switch ovsk,protocols=OpenFlow13 --mac
