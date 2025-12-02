@@ -47,9 +47,10 @@ sudo mn --topo=linear,3 --controller=remote,ip=127.0.0.1,port=6633 --switch ovsk
 curl -X PUT http://localhost:8080/firewall/module/enable/all
 
 # Install default allow rule
-curl -X POST -H "Content-Type: application/json" \
-  -d '{"priority": 1, "dl_type": "IPv4", "actions": "ALLOW"}' \
-  http://127.0.0.1:8080/firewall/rules/all
+curl -X POST \
+     -H "Content-Type: application/json" \
+     -d '{"priority": 1, "dl_type": "IPv4", "actions": "ALLOW"}' \
+     http://127.0.0.1:8080/firewall/rules/all
 ```
 
 **Verify Ryu is Running:**

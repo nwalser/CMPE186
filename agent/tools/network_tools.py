@@ -15,12 +15,37 @@ def get_firewall_rules(switch_id: str = "all") -> str:
         response.raise_for_status()
         rules = response.json()
 
-        if not rules or (isinstance(rules, dict) and not any(rules.values())):
+        if not rules:
             return "### Firewall Rules\n\n**No rules currently configured.**"
 
         # Format rules as markdown
         output = "### Current Firewall Rules\n\n"
-        if isinstance(rules, dict):
+
+        # Handle list format from Ryu API
+        if isinstance(rules, list):
+            for switch_data in rules:
+                switch = switch_data.get('switch_id', 'unknown')
+                output += f"**Switch:** `{switch}`\n\n"
+
+                access_control_list = switch_data.get('access_control_list', [])
+                if access_control_list:
+                    for acl_entry in access_control_list:
+                        rule_list = acl_entry.get('rules', [])
+                        if rule_list:
+                            for rule in rule_list:
+                                rule_id = rule.get('rule_id', 'N/A')
+                                action = rule.get('actions', 'UNKNOWN')
+                                src = rule.get('nw_src', 'any')
+                                dst = rule.get('nw_dst', 'any')
+                                priority = rule.get('priority', 'N/A')
+                                output += f"- **Rule {rule_id}**: {action} | Source: `{src}` → Dest: `{dst}` | Priority: {priority}\n"
+                        else:
+                            output += "  *No rules*\n"
+                else:
+                    output += "  *No rules*\n"
+                output += "\n"
+        # Handle dict format (for backward compatibility)
+        elif isinstance(rules, dict):
             for switch, switch_rules in rules.items():
                 output += f"**Switch:** `{switch}`\n\n"
                 if switch_rules:
@@ -33,6 +58,7 @@ def get_firewall_rules(switch_id: str = "all") -> str:
                 else:
                     output += "  *No rules*\n"
                 output += "\n"
+
         return output
     except requests.exceptions.Timeout:
         return "⚠️ **Error:** Connection to Ryu controller timed out. Is Ryu running?"
@@ -102,13 +128,27 @@ def get_network_status() -> str:
         # Format status as markdown
         output = "### Network Status\n\n**Firewall Modules:**\n\n"
 
-        if isinstance(switch_status, dict):
+        # Handle list format from Ryu API
+        if isinstance(switch_status, list):
+            for item in switch_status:
+                switch = item.get('switch_id', 'unknown')
+                status = item.get('status', 'unknown')
+                enabled = "✅ Enabled" if status == "enable" else "❌ Disabled"
+                output += f"- Switch `{switch}`: {enabled}\n"
+        elif isinstance(switch_status, dict):
             for switch, status in switch_status.items():
                 enabled = "✅ Enabled" if status == "enable" else "❌ Disabled"
                 output += f"- Switch `{switch}`: {enabled}\n"
 
         output += "\n**Logging Status:**\n\n"
-        if isinstance(log_status, dict):
+        # Handle list format from Ryu API (note: log status uses 'log_status' field)
+        if isinstance(log_status, list):
+            for item in log_status:
+                switch = item.get('switch_id', 'unknown')
+                status = item.get('log_status', 'unknown')  # Changed from 'status' to 'log_status'
+                enabled = "✅ Enabled" if status == "enable" else "❌ Disabled"
+                output += f"- Switch `{switch}`: {enabled}\n"
+        elif isinstance(log_status, dict):
             for switch, status in log_status.items():
                 enabled = "✅ Enabled" if status == "enable" else "❌ Disabled"
                 output += f"- Switch `{switch}`: {enabled}\n"
